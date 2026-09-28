@@ -68,7 +68,7 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
 
-    <!-- NOVO: Container de Toasts (alertas rápidos) -->
+    <!-- Container de Toasts (alertas rápidos) -->
     <div id="toastContainer" class="fixed top-0 left-0 right-0 z-[100] flex flex-col items-center gap-2 px-4 pt-safe mt-2 max-w-lg mx-auto pointer-events-none"></div>
 
     <!-- TELA DE LOGIN -->
@@ -195,7 +195,7 @@
         <!-- ABA: DASHBOARD -->
         <section id="tab-dashboard" class="tab-content space-y-4">
 
-            <!-- NOVO: Banner de alertas de limite/metas -->
+            <!-- Banner de alertas de limite/metas -->
             <div id="budgetAlertBanner" class="space-y-2"></div>
 
             <div class="grid grid-cols-3 gap-2">
@@ -251,6 +251,25 @@
             </div>
 
             <div id="fullTxList" class="space-y-2"></div>
+        </section>
+
+        <!-- ABA: CARTÕES -->
+        <section id="tab-cards" class="tab-content space-y-4 hidden">
+            <div class="flex justify-between items-center gap-2">
+                <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300">Cartões e Faturas</h2>
+                <div class="flex gap-2">
+                    <button onclick="openCardModal()" class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-xl font-medium shadow-sm active:scale-95 transition-transform">
+                        <i class="fas fa-plus text-[10px] mr-1"></i>Cartão
+                    </button>
+                    <button onclick="openCardPurchaseModal()" class="text-xs bg-brand-600 text-white px-3 py-1.5 rounded-xl font-medium shadow-sm active:scale-95 transition-transform">
+                        <i class="fas fa-plus text-[10px] mr-1"></i>Compra
+                    </button>
+                </div>
+            </div>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                💡 Compras no <b>crédito</b> não afetam seu saldo imediatamente — somente quando você confirmar o pagamento da fatura. Compras no <b>débito</b> saem do saldo na hora.
+            </p>
+            <div id="cardsList" class="space-y-3"></div>
         </section>
 
         <!-- ABA: DESPESAS FIXAS -->
@@ -309,6 +328,10 @@
             <button onclick="switchTab('transactions')" id="nav-transactions" class="nav-item flex-1 flex flex-col items-center py-1 text-gray-400">
                 <i class="fas fa-list-ul text-base"></i>
                 <span class="text-[9px] font-medium mt-1">Extrato</span>
+            </button>
+            <button onclick="switchTab('cards')" id="nav-cards" class="nav-item flex-1 flex flex-col items-center py-1 text-gray-400">
+                <i class="fas fa-credit-card text-base"></i>
+                <span class="text-[9px] font-medium mt-1">Cartões</span>
             </button>
             <button onclick="switchTab('fixed')" id="nav-fixed" class="nav-item flex-1 flex flex-col items-center py-1 text-gray-400">
                 <i class="fas fa-calendar-check text-base"></i>
@@ -528,6 +551,85 @@
         </form>
     </div>
 
+    <!-- MODAL: Cartão -->
+    <div id="cardModal" class="bottom-sheet fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl p-5 z-50 max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
+        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <h3 id="cardModalTitle" class="text-base font-bold mb-4">Novo Cartão</h3>
+        <form id="cardForm" onsubmit="saveCard(event)" class="space-y-3">
+            <input type="hidden" id="cardId">
+            <div>
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Nome do Cartão</label>
+                <input type="text" id="cardName" required maxlength="40" placeholder="Ex: Nubank, Inter, Caixa..." class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Tipo</label>
+                    <select id="cardType" onchange="toggleCardCreditFields()" class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white">
+                        <option value="credito">Crédito</option>
+                        <option value="debito">Débito</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Cor</label>
+                    <input type="color" id="cardColor" value="#6366f1" class="w-full h-9 mt-1 p-1 rounded-xl bg-gray-50 dark:bg-gray-700 border-none cursor-pointer">
+                </div>
+            </div>
+            <div id="cardCreditFields" class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Dia Fechamento</label>
+                    <input type="number" min="1" max="31" id="cardClosingDay" placeholder="Ex: 25" class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Dia Vencimento</label>
+                    <input type="number" min="1" max="31" id="cardDueDay" placeholder="Ex: 5" class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white">
+                </div>
+                <div class="col-span-2">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Limite Total (R$)</label>
+                    <input type="number" step="0.01" min="0" id="cardLimit" placeholder="0 para sem limite" class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white">
+                </div>
+            </div>
+            <button type="submit" class="w-full py-3 bg-brand-600 text-white font-bold rounded-xl text-xs shadow-md mt-2 active:scale-98 transition-transform">Salvar Cartão</button>
+        </form>
+    </div>
+
+    <!-- MODAL: Compra no Cartão -->
+    <div id="cardPurchaseModal" class="bottom-sheet fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl p-5 z-50 max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
+        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <h3 id="cardPurchaseModalTitle" class="text-base font-bold mb-4">Nova Compra no Cartão</h3>
+        <form id="cardPurchaseForm" onsubmit="saveCardPurchase(event)" class="space-y-3">
+            <input type="hidden" id="cardPurchaseId">
+            <div>
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Cartão</label>
+                <select id="cardPurchaseCardId" required onchange="onCardPurchaseCardChange()" class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white"></select>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Descrição</label>
+                <input type="text" id="cardPurchaseDesc" required maxlength="60" placeholder="Ex: Notebook, Roupas..." class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Valor Total (R$)</label>
+                    <input type="number" step="0.01" min="0.01" id="cardPurchaseAmount" required placeholder="Ex: 300,00" class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white">
+                </div>
+                <div id="cardPurchaseInstallmentsWrap">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Parcelas</label>
+                    <input type="number" min="1" max="24" id="cardPurchaseInstallments" value="1" class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Categoria</label>
+                    <select id="cardPurchaseCategory" required class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white"></select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Data da Compra</label>
+                    <input type="date" id="cardPurchaseDate" required class="w-full mt-1 bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-3 py-2 text-xs dark:text-white">
+                </div>
+            </div>
+            <button type="submit" class="w-full py-3 bg-brand-600 text-white font-bold rounded-xl text-xs shadow-md mt-2 active:scale-98 transition-transform">Salvar Compra</button>
+        </form>
+    </div>
+
     <!-- BACKDROP DO CHAT -->
     <div id="chatBackdrop" onclick="closeChat()" class="backdrop fixed inset-0 bg-black/50 z-40"></div>
 
@@ -600,13 +702,13 @@
             return `${year}-${month}-${day}`;
         }
 
-        /* NOVO: Formatação de moeda BRL correta (separador de milhar, vírgula decimal) */
+        /* Formatação de moeda BRL correta (separador de milhar, vírgula decimal) */
         function formatBRL(value) {
             const num = Number(value) || 0;
             return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        /* NOVO: Escape de HTML para evitar XSS em campos digitados pelo usuário */
+        /* Escape de HTML para evitar XSS em campos digitados pelo usuário */
         function escapeHTML(str) {
             const div = document.createElement('div');
             div.textContent = (str === null || str === undefined) ? '' : String(str);
@@ -618,6 +720,9 @@
             fixedExpenses: [],
             categories: [],
             goals: [],
+            cards: [],
+            cardPurchases: [],
+            cardInvoicePayments: [],
             currentTxType: 'expense',
             chart: null,
             annualChart: null
@@ -656,6 +761,12 @@
             ];
         }
 
+        function defaultCards() {
+            return [
+                { id: 'card1', name: 'Cartão Principal', type: 'credito', color: '#6366f1', closingDay: 25, dueDay: 5, limit: 2000 }
+            ];
+        }
+
         /* ============================================================
            TEMA
         ============================================================ */
@@ -679,13 +790,13 @@
             document.getElementById('txDate').value = getLocalDateString();
         });
 
-        /* NOVO: Tenta salvar dados pendentes antes de fechar/atualizar a aba */
+        /* Tenta salvar dados pendentes antes de fechar/atualizar a aba */
         window.addEventListener('beforeunload', () => {
             flushPendingSave();
         });
 
         /* ============================================================
-           NOVO: SISTEMA DE TOASTS (ALERTAS RÁPIDOS)
+           SISTEMA DE TOASTS (ALERTAS RÁPIDOS)
         ============================================================ */
         function showToast(message, type = 'info', duration = 5000) {
             const container = document.getElementById('toastContainer');
@@ -719,7 +830,7 @@
         }
 
         /* ============================================================
-           NOVO: VERIFICAÇÃO DE LIMITES E ALERTAS DE ORÇAMENTO
+           VERIFICAÇÃO DE LIMITES E ALERTAS DE ORÇAMENTO
         ============================================================ */
         const alertedThisSession = new Set();
 
@@ -754,7 +865,7 @@
             }
         }
 
-        /* NOVO: Metas com prazo próximo (<=30 dias) e progresso baixo (<80%) */
+        /* Metas com prazo próximo (<=30 dias) e progresso baixo (<80%) */
         function getGoalDeadlineAlerts() {
             const now = new Date();
             now.setHours(0,0,0,0);
@@ -771,7 +882,7 @@
             });
         }
 
-        /* NOVO: Renderiza o banner fixo de alertas no Dashboard */
+        /* Renderiza o banner fixo de alertas no Dashboard */
         function renderBudgetAlertBanner(monthTxs) {
             const banner = document.getElementById('budgetAlertBanner');
             if (!banner) return;
@@ -805,6 +916,43 @@
                         <div class="text-[11px] leading-relaxed">
                             <b>Atenção às metas!</b> ${goalAlerts.map(g => `${escapeHTML(g.title)} (${g.diffDays}d restantes)`).join(', ')}.
                             <button onclick="switchTab('goals')" class="underline font-bold ml-1">Ver metas</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            /* Alertas de fatura próxima do vencimento */
+            const refMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+            const nowD = new Date(); nowD.setHours(0, 0, 0, 0);
+
+            const invoiceAlerts = state.cards.filter(c => c.type === 'credito').map(c => {
+                const { total } = getCardInvoiceForMonth(c.id, refMonth);
+                if (isInvoicePaid(c.id, refMonth) || total <= 0) return null;
+                const dueDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), c.dueDay || 10);
+                const diffDays = Math.ceil((dueDate - nowD) / 86400000);
+                return (diffDays >= 0 && diffDays <= 5) ? { name: c.name, diffDays, total } : null;
+            }).filter(Boolean);
+
+            if (invoiceAlerts.length > 0) {
+                html += `
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 rounded-2xl p-3 flex items-start gap-2">
+                        <i class="fas fa-credit-card mt-0.5"></i>
+                        <div class="text-[11px] leading-relaxed">
+                            <b>Fatura(s) perto do vencimento!</b> ${invoiceAlerts.map(a => `${escapeHTML(a.name)} - ${formatBRL(a.total)} (${a.diffDays}d)`).join(', ')}.
+                            <button onclick="switchTab('cards')" class="underline font-bold ml-1">Ver cartões</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const overLimitCards = state.cards.filter(c => c.type === 'credito' && c.limit > 0 && getCardUsedLimit(c.id) > c.limit);
+            if (overLimitCards.length > 0) {
+                html += `
+                    <div class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 rounded-2xl p-3 flex items-start gap-2">
+                        <i class="fas fa-credit-card mt-0.5"></i>
+                        <div class="text-[11px] leading-relaxed">
+                            <b>Limite de cartão ultrapassado!</b> ${overLimitCards.map(c => escapeHTML(c.name)).join(', ')}.
+                            <button onclick="switchTab('cards')" class="underline font-bold ml-1">Ver detalhes</button>
                         </div>
                     </div>
                 `;
@@ -929,8 +1077,12 @@
                 state.fixedExpenses = [];
                 state.categories = [];
                 state.goals = [];
+                state.cards = [];
+                state.cardPurchases = [];
+                state.cardInvoicePayments = [];
                 chatHistory = [];
                 alertedThisSession.clear();
+                cardAlertedThisSession.clear();
                 document.getElementById('welcomeScreen').classList.add('hidden');
                 document.getElementById('loginScreen').classList.remove('hidden');
                 resetAuthForm();
@@ -954,6 +1106,9 @@
                     state.fixedExpenses = data.fixedExpenses || [];
                     state.categories = (data.categories && data.categories.length) ? data.categories : defaultCategories();
                     state.goals = data.goals || [];
+                    state.cards = data.cards || [];
+                    state.cardPurchases = data.cardPurchases || [];
+                    state.cardInvoicePayments = data.cardInvoicePayments || [];
 
                     document.getElementById('welcomeScreen').classList.add('hidden');
                     updateHeaderProfile();
@@ -963,6 +1118,9 @@
                     state.fixedExpenses = defaultFixedExpenses();
                     state.categories = defaultCategories();
                     state.goals = defaultGoals();
+                    state.cards = defaultCards();
+                    state.cardPurchases = [];
+                    state.cardInvoicePayments = [];
 
                     document.getElementById('setupUserName').value = user.displayName || '';
                     document.getElementById('setupUserSubtext').value = DEFAULT_SUBTEXT;
@@ -981,7 +1139,7 @@
             return db.collection('users').doc(currentUser.uid).set(fields, { merge: true });
         }
 
-        /* NOVO: Debounce nas escritas do Firestore (renderiza local na hora, salva na nuvem com atraso) */
+        /* Debounce nas escritas do Firestore (renderiza local na hora, salva na nuvem com atraso) */
         let persistDebounceTimer = null;
 
         function saveData() {
@@ -994,12 +1152,15 @@
                     transactions: state.transactions,
                     fixedExpenses: state.fixedExpenses,
                     categories: state.categories,
-                    goals: state.goals
+                    goals: state.goals,
+                    cards: state.cards,
+                    cardPurchases: state.cardPurchases,
+                    cardInvoicePayments: state.cardInvoicePayments
                 });
             }, 600);
         }
 
-        /* NOVO: Força o envio imediato de qualquer alteração pendente (usado no logout/fechar aba) */
+        /* Força o envio imediato de qualquer alteração pendente (usado no logout/fechar aba) */
         function flushPendingSave() {
             if (persistDebounceTimer) {
                 clearTimeout(persistDebounceTimer);
@@ -1008,7 +1169,10 @@
                     transactions: state.transactions,
                     fixedExpenses: state.fixedExpenses,
                     categories: state.categories,
-                    goals: state.goals
+                    goals: state.goals,
+                    cards: state.cards,
+                    cardPurchases: state.cardPurchases,
+                    cardInvoicePayments: state.cardInvoicePayments
                 });
             }
         }
@@ -1112,6 +1276,9 @@
                 fixedExpenses: state.fixedExpenses,
                 categories: state.categories,
                 goals: state.goals,
+                cards: state.cards,
+                cardPurchases: state.cardPurchases,
+                cardInvoicePayments: state.cardInvoicePayments,
                 exportDate: new Date().toISOString()
             };
 
@@ -1147,6 +1314,9 @@
                         state.fixedExpenses = importedData.fixedExpenses || [];
                         state.categories = importedData.categories || [];
                         state.goals = importedData.goals || [];
+                        state.cards = importedData.cards || [];
+                        state.cardPurchases = importedData.cardPurchases || [];
+                        state.cardInvoicePayments = importedData.cardInvoicePayments || [];
 
                         saveProfileToFirestore().then(() => {
                             saveData();
@@ -1179,7 +1349,9 @@
             renderFixedExpenses();
             renderBudgets();
             renderGoals();
+            renderCards();
             renderCategoryOptions();
+            renderCardOptions();
         }
 
         function updateMonthLabel() {
@@ -1225,7 +1397,6 @@
             }
         }
 
-        /* ALTERADO: agora recebe o ID e busca no state (mais seguro que JSON.stringify no onclick) */
         function openTxModal(id = null) {
             const tx = id ? state.transactions.find(t => t.id === id) : null;
 
@@ -1251,6 +1422,7 @@
         function saveTransaction(e) {
             e.preventDefault();
             const id = document.getElementById('txId').value;
+            const existing = id ? state.transactions.find(t => t.id === id) : null;
             const newTx = {
                 id: id || Date.now().toString(),
                 desc: document.getElementById('txDesc').value,
@@ -1260,6 +1432,7 @@
                 type: state.currentTxType,
                 date: document.getElementById('txDate').value
             };
+            if (existing && existing.cardId) newTx.cardId = existing.cardId;
 
             if (id) {
                 const idx = state.transactions.findIndex(t => t.id === id);
@@ -1270,7 +1443,6 @@
 
             saveData();
 
-            /* NOVO: verifica se a categoria ultrapassou o limite após salvar a despesa */
             if (newTx.type === 'expense') {
                 checkCategoryBudgetAlert(newTx.category, newTx.date);
             }
@@ -1298,7 +1470,6 @@
         function renderDashboard() {
             const monthTxs = getFilteredTransactionsForCurrentMonth();
 
-            /* NOVO: atualiza o banner de alertas sempre que o dashboard é renderizado */
             renderBudgetAlertBanner(monthTxs);
 
             const income = monthTxs.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
@@ -1393,7 +1564,6 @@
             }).join('') || '<p class="text-xs text-gray-400 text-center py-4">Nenhuma despesa fixa cadastrada.</p>';
         }
 
-        /* ALTERADO: recebe ID em vez de objeto */
         function openFixedModal(id = null) {
             const fixed = id ? state.fixedExpenses.find(f => f.id === id) : null;
 
@@ -1464,8 +1634,440 @@
             state.transactions.unshift(paidTx);
             saveData();
 
-            /* NOVO: verifica limite também quando uma despesa fixa é confirmada */
             checkCategoryBudgetAlert(paidTx.category, paidTx.date);
+        }
+
+        /* ============================================================
+           CARTÕES DE CRÉDITO / DÉBITO
+        ============================================================ */
+        const cardAlertedThisSession = new Set();
+
+        /* Calcula em qual mês de fatura (YYYY-MM) cai uma parcela */
+        function getInvoiceRefMonth(purchaseDateStr, closingDay, installmentIndex) {
+            const d = new Date(purchaseDateStr + 'T00:00:00');
+            let year = d.getFullYear();
+            let month = d.getMonth();
+            const day = d.getDate();
+
+            if (day >= closingDay) month += 1;
+            month += installmentIndex;
+
+            year += Math.floor(month / 12);
+            month = ((month % 12) + 12) % 12;
+
+            return `${year}-${String(month + 1).padStart(2, '0')}`;
+        }
+
+        /* Retorna a lista de parcelas de uma compra, já com o mês de fatura calculado */
+        function getPurchaseInstallments(purchase) {
+            const n = purchase.installments || 1;
+            const perInstallment = purchase.totalAmount / n;
+            const card = state.cards.find(c => c.id === purchase.cardId);
+            const closingDay = card ? (card.closingDay || 1) : 1;
+            const list = [];
+
+            for (let i = 0; i < n; i++) {
+                list.push({
+                    purchaseId: purchase.id,
+                    desc: purchase.desc,
+                    category: purchase.category,
+                    amount: perInstallment,
+                    installmentLabel: n > 1 ? `${i + 1}/${n}` : null,
+                    refMonth: getInvoiceRefMonth(purchase.date, closingDay, i)
+                });
+            }
+            return list;
+        }
+
+        /* Soma todas as parcelas que caem em um determinado mês de fatura */
+        function getCardInvoiceForMonth(cardId, refMonth) {
+            const items = [];
+            state.cardPurchases.filter(p => p.cardId === cardId).forEach(p => {
+                getPurchaseInstallments(p).forEach(inst => {
+                    if (inst.refMonth === refMonth) items.push(inst);
+                });
+            });
+            return { items, total: items.reduce((a, b) => a + b.amount, 0) };
+        }
+
+        function isInvoicePaid(cardId, refMonth) {
+            return state.cardInvoicePayments.some(p => p.cardId === cardId && p.refMonth === refMonth);
+        }
+
+        /* Limite usado = soma de todas as parcelas (de qualquer mês) ainda não pagas */
+        function getCardUsedLimit(cardId) {
+            let used = 0;
+            state.cardPurchases.filter(p => p.cardId === cardId).forEach(p => {
+                getPurchaseInstallments(p).forEach(inst => {
+                    if (!isInvoicePaid(cardId, inst.refMonth)) used += inst.amount;
+                });
+            });
+            return used;
+        }
+
+        function checkCardLimitAlert(cardId) {
+            const card = state.cards.find(c => c.id === cardId);
+            if (!card || card.type !== 'credito' || !card.limit || card.limit <= 0) return;
+
+            const used = getCardUsedLimit(cardId);
+            const pct = (used / card.limit) * 100;
+
+            if (pct >= 100 && !cardAlertedThisSession.has(cardId + '-100')) {
+                cardAlertedThisSession.add(cardId + '-100');
+                showToast(`🚨 Limite do cartão <b>${escapeHTML(card.name)}</b> ultrapassado! ${formatBRL(used)} / ${formatBRL(card.limit)}`, 'danger', 6000);
+            } else if (pct >= 90 && !cardAlertedThisSession.has(cardId + '-90')) {
+                cardAlertedThisSession.add(cardId + '-90');
+                showToast(`⚠️ Você já usou ${pct.toFixed(0)}% do limite do cartão <b>${escapeHTML(card.name)}</b>.`, 'warning');
+            }
+        }
+
+        /* Confirma o pagamento da fatura do mês atualmente visualizado (currentDate) */
+        function confirmCardInvoicePayment(cardId) {
+            const card = state.cards.find(c => c.id === cardId);
+            if (!card) return;
+
+            const refMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+            const { total, items } = getCardInvoiceForMonth(cardId, refMonth);
+
+            if (total <= 0) { showToast('Não há fatura para pagar neste mês.', 'info'); return; }
+            if (isInvoicePaid(cardId, refMonth)) { showToast('Esta fatura já foi paga.', 'info'); return; }
+            if (!confirm(`Confirmar pagamento da fatura de "${card.name}" no valor de ${formatBRL(total)}?`)) return;
+
+            const day = String(card.dueDay || 10).padStart(2, '0');
+            const dateStr = `${refMonth}-${day}`;
+
+            items.forEach(item => {
+                const tx = {
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    type: 'expense',
+                    desc: `${item.desc}${item.installmentLabel ? ' (' + item.installmentLabel + ')' : ''} - ${card.name}`,
+                    amount: item.amount,
+                    category: item.category,
+                    paymentMethod: 'Crédito',
+                    date: dateStr
+                };
+                state.transactions.unshift(tx);
+                checkCategoryBudgetAlert(tx.category, tx.date);
+            });
+
+            state.cardInvoicePayments.push({
+                id: Date.now().toString() + 'p',
+                cardId,
+                refMonth,
+                amount: total,
+                paidDate: getLocalDateString()
+            });
+
+            saveData();
+            showToast(`✅ Fatura de "${card.name}" paga com sucesso!`, 'success');
+        }
+
+        /* ---------- CRUD: CARTÕES ---------- */
+        function toggleCardCreditFields() {
+            const type = document.getElementById('cardType').value;
+            document.getElementById('cardCreditFields').classList.toggle('hidden', type === 'debito');
+        }
+
+        function openCardModal(id = null) {
+            const card = id ? state.cards.find(c => c.id === id) : null;
+
+            if (card) {
+                document.getElementById('cardId').value = card.id;
+                document.getElementById('cardName').value = card.name;
+                document.getElementById('cardType').value = card.type;
+                document.getElementById('cardColor').value = card.color || '#6366f1';
+                document.getElementById('cardClosingDay').value = card.closingDay || '';
+                document.getElementById('cardDueDay').value = card.dueDay || '';
+                document.getElementById('cardLimit').value = card.limit || '';
+                document.getElementById('cardModalTitle').innerText = 'Editar Cartão';
+            } else {
+                document.getElementById('cardForm').reset();
+                document.getElementById('cardId').value = '';
+                document.getElementById('cardType').value = 'credito';
+                document.getElementById('cardColor').value = '#6366f1';
+                document.getElementById('cardModalTitle').innerText = 'Novo Cartão';
+            }
+            toggleCardCreditFields();
+            openModal('cardModal');
+        }
+
+        function saveCard(e) {
+            e.preventDefault();
+            const id = document.getElementById('cardId').value;
+            const cardData = {
+                id: id || Date.now().toString(),
+                name: document.getElementById('cardName').value.trim(),
+                type: document.getElementById('cardType').value,
+                color: document.getElementById('cardColor').value,
+                closingDay: parseInt(document.getElementById('cardClosingDay').value) || 1,
+                dueDay: parseInt(document.getElementById('cardDueDay').value) || 10,
+                limit: parseFloat(document.getElementById('cardLimit').value) || 0
+            };
+
+            if (id) {
+                const idx = state.cards.findIndex(c => c.id === id);
+                if (idx !== -1) state.cards[idx] = cardData;
+            } else {
+                state.cards.push(cardData);
+            }
+
+            saveData();
+            closeAllModals();
+        }
+
+        function deleteCard(id) {
+            const hasPurchases = state.cardPurchases.some(p => p.cardId === id);
+            const msg = hasPurchases
+                ? 'Este cartão possui compras registradas. Ao excluir, o histórico de compras da fatura também será removido. Deseja continuar?'
+                : 'Excluir este cartão?';
+            if (!confirm(msg)) return;
+
+            state.cards = state.cards.filter(c => c.id !== id);
+            state.cardPurchases = state.cardPurchases.filter(p => p.cardId !== id);
+            state.cardInvoicePayments = state.cardInvoicePayments.filter(p => p.cardId !== id);
+            saveData();
+        }
+
+        /* ---------- CRUD: COMPRAS NO CARTÃO ---------- */
+        function onCardPurchaseCardChange() {
+            const cardId = document.getElementById('cardPurchaseCardId').value;
+            const card = state.cards.find(c => c.id === cardId);
+            const wrap = document.getElementById('cardPurchaseInstallmentsWrap');
+            const input = document.getElementById('cardPurchaseInstallments');
+            if (!wrap || !input) return;
+
+            if (card && card.type === 'debito') {
+                wrap.classList.add('opacity-40', 'pointer-events-none');
+                input.value = 1;
+                input.disabled = true;
+            } else {
+                wrap.classList.remove('opacity-40', 'pointer-events-none');
+                input.disabled = false;
+            }
+        }
+
+        function openCardPurchaseModal(id = null, presetCardId = null) {
+            if (!id && state.cards.length === 0) {
+                showToast('Cadastre um cartão antes de lançar uma compra.', 'warning');
+                return;
+            }
+
+            renderCardOptions();
+            const purchase = id ? state.cardPurchases.find(p => p.id === id) : null;
+
+            if (purchase) {
+                document.getElementById('cardPurchaseId').value = purchase.id;
+                document.getElementById('cardPurchaseCardId').value = purchase.cardId;
+                document.getElementById('cardPurchaseDesc').value = purchase.desc;
+                document.getElementById('cardPurchaseAmount').value = purchase.totalAmount;
+                document.getElementById('cardPurchaseInstallments').value = purchase.installments;
+                document.getElementById('cardPurchaseCategory').value = purchase.category;
+                document.getElementById('cardPurchaseDate').value = purchase.date;
+                document.getElementById('cardPurchaseModalTitle').innerText = 'Editar Compra';
+            } else {
+                document.getElementById('cardPurchaseForm').reset();
+                document.getElementById('cardPurchaseId').value = '';
+                document.getElementById('cardPurchaseDate').value = getLocalDateString();
+                document.getElementById('cardPurchaseInstallments').value = 1;
+                if (presetCardId) document.getElementById('cardPurchaseCardId').value = presetCardId;
+                document.getElementById('cardPurchaseModalTitle').innerText = 'Nova Compra no Cartão';
+            }
+
+            onCardPurchaseCardChange();
+            openModal('cardPurchaseModal');
+        }
+
+        function saveCardPurchase(e) {
+            e.preventDefault();
+            const id = document.getElementById('cardPurchaseId').value;
+            const cardId = document.getElementById('cardPurchaseCardId').value;
+            const card = state.cards.find(c => c.id === cardId);
+            if (!card) { showToast('Selecione um cartão válido.', 'danger'); return; }
+
+            const desc = document.getElementById('cardPurchaseDesc').value.trim();
+            const amount = parseFloat(document.getElementById('cardPurchaseAmount').value);
+            const category = document.getElementById('cardPurchaseCategory').value;
+            const date = document.getElementById('cardPurchaseDate').value;
+            let installments = parseInt(document.getElementById('cardPurchaseInstallments').value) || 1;
+
+            if (card.type === 'debito') {
+                const tx = {
+                    id: Date.now().toString(),
+                    type: 'expense',
+                    desc,
+                    amount,
+                    category,
+                    paymentMethod: 'Débito',
+                    cardId,
+                    date
+                };
+                state.transactions.unshift(tx);
+                saveData();
+                checkCategoryBudgetAlert(category, date);
+            } else {
+                const purchaseData = { id: id || Date.now().toString(), cardId, desc, totalAmount: amount, installments, category, date };
+
+                if (id) {
+                    const idx = state.cardPurchases.findIndex(p => p.id === id);
+                    if (idx !== -1) state.cardPurchases[idx] = purchaseData;
+                } else {
+                    state.cardPurchases.unshift(purchaseData);
+                }
+                saveData();
+                checkCardLimitAlert(cardId);
+            }
+
+            closeAllModals();
+        }
+
+        function deleteCardPurchase(id) {
+            if (confirm('Excluir esta compra?')) {
+                state.cardPurchases = state.cardPurchases.filter(p => p.id !== id);
+                saveData();
+            }
+        }
+
+        /* ---------- RENDER ---------- */
+        function renderCardOptions() {
+            const sel = document.getElementById('cardPurchaseCardId');
+            if (!sel) return;
+            const currentVal = sel.value;
+            sel.innerHTML = state.cards.map(c =>
+                `<option value="${c.id}">${escapeHTML(c.name)} (${c.type === 'credito' ? 'Crédito' : 'Débito'})</option>`
+            ).join('');
+            if (currentVal) sel.value = currentVal;
+        }
+
+        function renderCards() {
+            const list = document.getElementById('cardsList');
+            if (!list) return;
+
+            if (state.cards.length === 0) {
+                list.innerHTML = '<p class="text-xs text-gray-400 text-center py-6">Nenhum cartão cadastrado. Adicione seu primeiro cartão! 💳</p>';
+                return;
+            }
+
+            const refMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+
+            list.innerHTML = state.cards.map(card => {
+                if (card.type === 'credito') {
+                    const { items, total } = getCardInvoiceForMonth(card.id, refMonth);
+                    const paid = isInvoicePaid(card.id, refMonth);
+                    const used = getCardUsedLimit(card.id);
+                    const limit = card.limit || 0;
+                    const pctLimit = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+                    const isOverLimit = limit > 0 && used > limit;
+
+                    const itemsHtml = items.length > 0 ? items.map(it => `
+                        <div class="flex justify-between items-center text-[11px] py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-none">
+                            <span class="text-gray-600 dark:text-gray-300">${escapeHTML(it.desc)}${it.installmentLabel ? ` <span class="text-gray-400">(${it.installmentLabel})</span>` : ''}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-semibold">${formatBRL(it.amount)}</span>
+                                <button onclick="openCardPurchaseModal('${it.purchaseId}')" class="text-gray-400 hover:text-brand-500"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteCardPurchase('${it.purchaseId}')" class="text-gray-300 hover:text-rose-500"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `).join('') : '<p class="text-[11px] text-gray-400 py-2">Nenhuma compra nesta fatura.</p>';
+
+                    return `
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+                            <div class="p-4 space-y-3">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white" style="background:${card.color}">
+                                            <i class="fas fa-credit-card text-xs"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold">${escapeHTML(card.name)}</p>
+                                            <span class="text-[9px] uppercase font-bold text-brand-500">Crédito</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="openCardModal('${card.id}')" class="text-gray-400 hover:text-brand-500 text-xs"><i class="fas fa-edit"></i></button>
+                                        <button onclick="deleteCard('${card.id}')" class="text-gray-300 hover:text-rose-500 text-xs"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+
+                                ${limit > 0 ? `
+                                <div>
+                                    <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                                        <span>Limite usado: ${formatBRL(used)} / ${formatBRL(limit)}</span>
+                                        <span class="${isOverLimit ? 'text-rose-600 font-bold' : ''}">${pctLimit}%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-100 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                                        <div class="h-full rounded-full ${isOverLimit ? 'bg-rose-500' : 'bg-brand-600'}" style="width:${pctLimit}%"></div>
+                                    </div>
+                                </div>` : ''}
+
+                                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-[11px] font-bold">Fatura ${monthNames[currentDate.getMonth()]}</span>
+                                        ${paid
+                                            ? `<span class="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 font-bold px-2 py-1 rounded-lg"><i class="fas fa-check mr-1"></i>Paga</span>`
+                                            : (total > 0 ? `<button onclick="confirmCardInvoicePayment('${card.id}')" class="text-[10px] bg-brand-600 text-white font-bold px-2.5 py-1 rounded-lg active:scale-95 transition-transform">Pagar Fatura</button>` : '')
+                                        }
+                                    </div>
+                                    <div class="flex justify-between text-[10px] text-gray-500">
+                                        <span>Total: <b class="text-gray-800 dark:text-gray-200">${formatBRL(total)}</b></span>
+                                        <span>Vence dia ${card.dueDay}</span>
+                                    </div>
+                                    <div class="max-h-32 overflow-y-auto no-scrollbar">${itemsHtml}</div>
+                                </div>
+
+                                <button onclick="openCardPurchaseModal(null, '${card.id}')" class="w-full py-2 bg-brand-50 dark:bg-gray-700 text-brand-600 dark:text-brand-400 text-[11px] font-bold rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform">
+                                    <i class="fas fa-plus text-[9px]"></i> Nova Compra
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const monthTxs = getFilteredTransactionsForCurrentMonth().filter(t => t.cardId === card.id);
+                    const total = monthTxs.reduce((a, t) => a + t.amount, 0);
+
+                    const itemsHtml = monthTxs.length > 0 ? monthTxs.map(t => `
+                        <div class="flex justify-between items-center text-[11px] py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-none">
+                            <span class="text-gray-600 dark:text-gray-300">${escapeHTML(t.desc)}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-semibold">${formatBRL(t.amount)}</span>
+                                <button onclick="openTxModal('${t.id}')" class="text-gray-400 hover:text-brand-500"><i class="fas fa-edit"></i></button>
+                            </div>
+                        </div>
+                    `).join('') : '<p class="text-[11px] text-gray-400 py-2">Nenhuma compra neste mês.</p>';
+
+                    return `
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+                            <div class="p-4 space-y-3">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white" style="background:${card.color}">
+                                            <i class="fas fa-money-check-alt text-xs"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold">${escapeHTML(card.name)}</p>
+                                            <span class="text-[9px] uppercase font-bold text-emerald-500">Débito</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="openCardModal('${card.id}')" class="text-gray-400 hover:text-brand-500 text-xs"><i class="fas fa-edit"></i></button>
+                                        <button onclick="deleteCard('${card.id}')" class="text-gray-300 hover:text-rose-500 text-xs"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 space-y-2">
+                                    <div class="flex justify-between text-[10px] text-gray-500">
+                                        <span>Total gasto no mês: <b class="text-gray-800 dark:text-gray-200">${formatBRL(total)}</b></span>
+                                    </div>
+                                    <div class="max-h-32 overflow-y-auto no-scrollbar">${itemsHtml}</div>
+                                </div>
+
+                                <button onclick="openCardPurchaseModal(null, '${card.id}')" class="w-full py-2 bg-emerald-50 dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform">
+                                    <i class="fas fa-plus text-[9px]"></i> Nova Compra
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
         }
 
         /* ============================================================
@@ -1566,7 +2168,6 @@
             }).join('') || '<p class="text-xs text-gray-400 text-center py-4">Nenhuma categoria cadastrada.</p>';
         }
 
-        /* ALTERADO: recebe ID em vez de objeto */
         function openCategoryModal(id = null) {
             const cat = id ? state.categories.find(c => c.id === id) : null;
 
@@ -1603,6 +2204,7 @@
                     if (oldName !== name) {
                         state.transactions.forEach(t => { if (t.category === oldName) t.category = name; });
                         state.fixedExpenses.forEach(f => { if (f.category === oldName) f.category = name; });
+                        state.cardPurchases.forEach(p => { if (p.category === oldName) p.category = name; });
                     }
                 }
             } else {
@@ -1621,7 +2223,7 @@
         }
 
         function renderCategoryOptions() {
-            const selects = [document.getElementById('txCategory'), document.getElementById('txCatFilter'), document.getElementById('fixedCategory')];
+            const selects = [document.getElementById('txCategory'), document.getElementById('txCatFilter'), document.getElementById('fixedCategory'), document.getElementById('cardPurchaseCategory')];
             selects.forEach(sel => {
                 if (!sel) return;
                 const isFilter = sel.id === 'txCatFilter';
@@ -1673,7 +2275,6 @@
             }
         }
 
-        /* ALTERADO: recebe ID em vez de objeto */
         function openGoalModal(id = null) {
             const goal = id ? state.goals.find(g => g.id === id) : null;
 
@@ -1761,8 +2362,6 @@
 
         /* ============================================================
            CHATBOT - ASSISTENTE FINANCEIRO (Comandos Inteligentes)
-           NOVO: quick replies (chips), execução de ações (abrir modais)
-           e novos comandos usando os dados que já existem no app.
         ============================================================ */
         let chatHistory = [];
 
@@ -1775,11 +2374,12 @@
             }
         }
 
-        /* NOVO: chips de sugestão de perguntas rápidas */
+        /* chips de sugestão de perguntas rápidas */
         function renderQuickReplies() {
             const chips = [
                 { label: '💰 Saldo', text: 'Qual meu saldo?' },
                 { label: '🚨 Estourei algum limite?', text: 'Estourei algum limite?' },
+                { label: '💳 Meus cartões', text: 'Meus cartões' },
                 { label: '🎯 Minhas metas', text: 'Como estão minhas metas?' },
                 { label: '📅 Despesas fixas', text: 'Quais minhas despesas fixas?' }
             ];
@@ -1790,7 +2390,6 @@
             </div>`;
         }
 
-        /* NOVO: permite clicar num chip para simular uma pergunta */
         function quickAsk(text) {
             addUserMessage(text);
             setTimeout(() => {
@@ -1809,7 +2408,7 @@
 
             if (chatHistory.length === 0) {
                 const firstName = userProfile ? userProfile.name.split(' ')[0] : '';
-                addBotMessage(`Olá${firstName ? ', ' + firstName : ''}! 👋 Sou seu assistente financeiro.<br><br>Você pode me dizer coisas como:<br>💬 "Gastei 50 no mercado"<br>💬 "Recebi 4500 de salário"<br>💬 "Qual meu saldo?"<br>💬 "Estourei algum limite?"<br>💬 "Guardei 100 na viagem"${renderQuickReplies()}`);
+                addBotMessage(`Olá${firstName ? ', ' + firstName : ''}! 👋 Sou seu assistente financeiro.<br><br>Você pode me dizer coisas como:<br>💬 "Gastei 50 no mercado"<br>💬 "Recebi 4500 de salário"<br>💬 "Gastei 200 no crédito do Nubank em 3x"<br>💬 "Gastei 50 no débito do Inter"<br>💬 "Qual a fatura do Nubank?"<br>💬 "Qual meu saldo?"<br>💬 "Estourei algum limite?"<br>💬 "Guardei 100 na viagem"${renderQuickReplies()}`);
             }
 
             setTimeout(() => {
@@ -1825,7 +2424,6 @@
             if (panel) panel.classList.remove('active');
         }
 
-        /* ALTERADO: escapa o texto do usuário antes de exibir (proteção XSS no chat) */
         function addUserMessage(text) {
             chatHistory.push({ sender: 'user', text: escapeHTML(text) });
             renderChatMessages();
@@ -1868,7 +2466,6 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        /* ALTERADO: agora também executa response.action, se existir (abre modais, etc) */
         function handleChatSubmit(e) {
             e.preventDefault();
             const input = document.getElementById('chatInput');
@@ -1919,6 +2516,14 @@
             return state.categories.find(c => norm.includes(normalizeText(c.name))) || null;
         }
 
+        /* Busca um cartão pelo nome dentro de um texto (opcionalmente filtrando por tipo) */
+        function findCardByText(text, type = null) {
+            const norm = normalizeText(text);
+            let candidates = state.cards;
+            if (type) candidates = candidates.filter(c => c.type === type);
+            return candidates.find(c => norm.includes(normalizeText(c.name))) || null;
+        }
+
         function guessCategoryForExpense(desc) {
             const norm = normalizeText(desc);
             const map = {
@@ -1941,7 +2546,7 @@
             const text = normalizeText(rawText);
 
             if (/^(oi|ola|opa|eae|hey|bom dia|boa tarde|boa noite)/.test(text)) {
-                return { text: `Olá! 😊 Como posso te ajudar? Você pode registrar gastos, receitas, ver saldo, limites ou metas.${renderQuickReplies()}` };
+                return { text: `Olá! 😊 Como posso te ajudar? Você pode registrar gastos, receitas, compras no cartão, ver saldo, limites ou metas.${renderQuickReplies()}` };
             }
 
             if (/suporte|ajuda|problema|bug|erro|reclama|contato|falar com humano|atendente/.test(text)) {
@@ -1952,7 +2557,7 @@
                 return { text: `Por nada! 😄 Estou aqui se precisar de mais alguma coisa.` };
             }
 
-            /* NOVO: desfazer última transação */
+            /* desfazer última transação */
             if (/desfazer|cancelar ultima|apagar ultima transacao/.test(text)) {
                 if (state.transactions.length === 0) {
                     return { text: `Não há transações para desfazer.` };
@@ -1963,7 +2568,7 @@
                 return { text: `🗑️ Removi a última transação: <b>${escapeHTML(last.desc)}</b> - ${formatBRL(last.amount)}` };
             }
 
-            /* NOVO: quais categorias ultrapassaram o limite */
+            /* quais categorias ultrapassaram o limite */
             if (/estourei|passei do limite|ultrapassei|no limite|limites estourados/.test(text)) {
                 const monthTxs = getFilteredTransactionsForCurrentMonth();
                 const overs = state.categories.filter(cat => {
@@ -1983,7 +2588,72 @@
                 return { text: `Você ultrapassou o limite em:<br>${list}` };
             }
 
-            /* NOVO: aporte em meta via linguagem natural — "guardei 100 na viagem" */
+            /* NOVO: resumo geral dos cartões */
+            if (/meus cart[oõ]es|cart[oõ]es cadastrados|resumo dos cart[oõ]es/.test(text)) {
+                if (state.cards.length === 0) {
+                    return { text: `Você ainda não tem cartões cadastrados. Posso abrir o cadastro agora! 💳`, action: () => { closeChat(); openCardModal(); } };
+                }
+                const refMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+                const listCards = state.cards.map(c => {
+                    if (c.type === 'credito') {
+                        const { total } = getCardInvoiceForMonth(c.id, refMonth);
+                        const paid = isInvoicePaid(c.id, refMonth);
+                        return `💳 <b>${escapeHTML(c.name)}</b> (Crédito): fatura ${formatBRL(total)} ${paid ? '✅ Paga' : '⏳ Em aberto'}`;
+                    } else {
+                        const monthTxs = getFilteredTransactionsForCurrentMonth().filter(t => t.cardId === c.id);
+                        const totalDeb = monthTxs.reduce((a, t) => a + t.amount, 0);
+                        return `💳 <b>${escapeHTML(c.name)}</b> (Débito): ${formatBRL(totalDeb)} gastos no mês`;
+                    }
+                }).join('<br>');
+                return { text: listCards };
+            }
+
+            /* NOVO: pagar fatura do cartão (checa antes de "ver fatura" pois é mais específico) */
+            let payInvoiceMatch = rawText.match(/pagar\s*fatura\s*(?:do|da|de)?\s*(?:cart[aã]o)?\s*(?:do|da|de)?\s*(.+)/i);
+            if (payInvoiceMatch && payInvoiceMatch[1]) {
+                const card = findCardByText(payInvoiceMatch[1], 'credito');
+                if (card) {
+                    return { text: `Vou abrir a tela de cartões para você confirmar o pagamento da fatura de <b>${escapeHTML(card.name)}</b>. 💳`, action: () => { closeChat(); switchTab('cards'); } };
+                } else {
+                    return { text: `Não encontrei nenhum cartão de crédito com esse nome. Verifique o nome cadastrado na aba Cartões.` };
+                }
+            }
+
+            /* NOVO: ver detalhes da fatura de um cartão */
+            let invoiceMatch = rawText.match(/fatura\s*(?:do|da|de)?\s*(?:cart[aã]o)?\s*(?:do|da|de)?\s*(.+)/i);
+            if (invoiceMatch && invoiceMatch[1] && /fatura/i.test(text) && !/pagar/i.test(text)) {
+                const card = findCardByText(invoiceMatch[1], 'credito');
+                if (card) {
+                    const refMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+                    const { total, items } = getCardInvoiceForMonth(card.id, refMonth);
+                    const paid = isInvoicePaid(card.id, refMonth);
+
+                    if (items.length === 0) {
+                        return { text: `A fatura de <b>${escapeHTML(card.name)}</b> em ${monthNames[currentDate.getMonth()]} está vazia.` };
+                    }
+
+                    const itemsList = items.map(i => `• ${escapeHTML(i.desc)}${i.installmentLabel ? ' (' + i.installmentLabel + ')' : ''} - ${formatBRL(i.amount)}`).join('<br>');
+                    return { text: `💳 Fatura de <b>${escapeHTML(card.name)}</b> (${monthNames[currentDate.getMonth()]}):<br>${itemsList}<br><br>Total: <b>${formatBRL(total)}</b> ${paid ? '✅ Já paga' : '⏳ Em aberto'}` };
+                }
+            }
+
+            /* NOVO: consultar limite de um cartão específico (checa antes do limite de categoria) */
+            let cardLimitMatch = rawText.match(/limite\s*(?:do|da|de)?\s*cart[aã]o\s*(.+)/i);
+            if (cardLimitMatch && cardLimitMatch[1]) {
+                const card = findCardByText(cardLimitMatch[1], 'credito');
+                if (card) {
+                    const used = getCardUsedLimit(card.id);
+                    const limit = card.limit || 0;
+                    if (limit > 0) {
+                        const remaining = limit - used;
+                        return { text: `💳 Cartão <b>${escapeHTML(card.name)}</b>:<br>Usado: ${formatBRL(used)} de ${formatBRL(limit)}<br>${remaining >= 0 ? `Disponível: ${formatBRL(remaining)}` : `⚠️ Limite ultrapassado em ${formatBRL(Math.abs(remaining))}`}` };
+                    } else {
+                        return { text: `O cartão <b>${escapeHTML(card.name)}</b> não tem limite definido. Usado até agora: ${formatBRL(used)}` };
+                    }
+                }
+            }
+
+            /* aporte em meta via linguagem natural — "guardei 100 na viagem" */
             let goalMatch = rawText.match(/(?:guardei|depositei|aportei|coloquei)\s*(?:r\$)?\s*([\d.,]+)\s*(?:reais)?\s*(?:na|no|para|em)?\s*(?:meta)?\s*(?:de)?\s*(.*)/i);
             if (goalMatch) {
                 const amount = parseAmount(goalMatch[1]);
@@ -2002,7 +2672,7 @@
                 }
             }
 
-            /* NOVO: abrir telas do app direto pelo chat */
+            /* abrir telas do app direto pelo chat */
             if (/criar meta|nova meta|cadastrar meta/.test(text)) {
                 return { text: `Vou abrir o formulário de nova meta para você! 🎯`, action: () => { closeChat(); openGoalModal(); } };
             }
@@ -2014,6 +2684,81 @@
             }
             if (/nova transacao|adicionar transacao|lancar gasto|lancar receita/.test(text)) {
                 return { text: `Abrindo o formulário de nova transação... 💸`, action: () => { closeChat(); openTxModal(); } };
+            }
+            if (/novo cart[aã]o|cadastrar cart[aã]o/.test(text)) {
+                return { text: `Abrindo o cadastro de cartão... 💳`, action: () => { closeChat(); openCardModal(); } };
+            }
+            if (/compra no cart[aã]o|nova compra cart[aã]o|comprar no cart[aã]o/.test(text)) {
+                return { text: `Abrindo o formulário de compra no cartão... 💳`, action: () => { closeChat(); openCardPurchaseModal(); } };
+            }
+
+            /* NOVO: compra no CRÉDITO via linguagem natural */
+            if (/cr[eé]dito/i.test(rawText) && /(gastei|comprei|paguei)/.test(text)) {
+                const amount = parseAmount(rawText);
+                if (amount && amount > 0) {
+                    const card = findCardByText(rawText, 'credito');
+                    if (card) {
+                        let installments = 1;
+                        const instMatch = rawText.match(/em\s*(\d+)\s*x/i);
+                        if (instMatch) installments = parseInt(instMatch[1]);
+
+                        const descRegex = new RegExp(`(?:gastei|comprei|paguei)\\s*(?:r\\$)?\\s*[\\d.,]+\\s*(?:reais)?\\s*(?:em|no|na|de|do|da)?\\s*(.*?)\\s*no\\s*cr[eé]dito`, 'i');
+                        const descMatch = rawText.match(descRegex);
+                        let desc = (descMatch && descMatch[1]) ? descMatch[1].trim().replace(/^(o|a|os|as|com|de|do|da)\s+/i, '') : '';
+                        if (!desc) desc = 'Compra no cartão';
+
+                        const categoryName = guessCategoryForExpense(desc);
+                        const purchase = {
+                            id: Date.now().toString(),
+                            cardId: card.id,
+                            desc: desc.charAt(0).toUpperCase() + desc.slice(1),
+                            totalAmount: amount,
+                            installments,
+                            category: categoryName,
+                            date: getLocalDateString()
+                        };
+                        state.cardPurchases.unshift(purchase);
+                        saveData();
+                        checkCardLimitAlert(card.id);
+
+                        return { text: `💳 Compra registrada no crédito do cartão <b>${escapeHTML(card.name)}</b>!<br>${escapeHTML(purchase.desc)} - ${formatBRL(amount)}${installments > 1 ? ` em ${installments}x` : ''}<br>Categoria: ${escapeHTML(categoryName)}<br><i>Esse valor não afeta seu saldo agora, só quando a fatura for paga.</i>` };
+                    } else {
+                        return { text: `Não encontrei nenhum cartão de crédito com esse nome cadastrado. Você pode cadastrar dizendo "novo cartão" ou pela aba Cartões. 💳` };
+                    }
+                }
+            }
+
+            /* NOVO: compra no DÉBITO via linguagem natural */
+            if (/d[eé]bito/i.test(rawText) && /(gastei|comprei|paguei)/.test(text)) {
+                const amount = parseAmount(rawText);
+                if (amount && amount > 0) {
+                    const card = findCardByText(rawText, 'debito');
+                    if (card) {
+                        const descRegex = new RegExp(`(?:gastei|comprei|paguei)\\s*(?:r\\$)?\\s*[\\d.,]+\\s*(?:reais)?\\s*(?:em|no|na|de|do|da)?\\s*(.*?)\\s*no\\s*d[eé]bito`, 'i');
+                        const descMatch = rawText.match(descRegex);
+                        let desc = (descMatch && descMatch[1]) ? descMatch[1].trim().replace(/^(o|a|os|as|com|de|do|da)\s+/i, '') : '';
+                        if (!desc) desc = 'Compra no débito';
+
+                        const categoryName = guessCategoryForExpense(desc);
+                        const tx = {
+                            id: Date.now().toString(),
+                            type: 'expense',
+                            desc: desc.charAt(0).toUpperCase() + desc.slice(1),
+                            amount,
+                            category: categoryName,
+                            paymentMethod: 'Débito',
+                            cardId: card.id,
+                            date: getLocalDateString()
+                        };
+                        state.transactions.unshift(tx);
+                        saveData();
+                        checkCategoryBudgetAlert(categoryName, tx.date);
+
+                        return { text: `✅ Compra no débito registrada!<br>Cartão: <b>${escapeHTML(card.name)}</b><br>${escapeHTML(tx.desc)} - ${formatBRL(amount)}<br>Categoria: ${escapeHTML(categoryName)}` };
+                    } else {
+                        return { text: `Não encontrei nenhum cartão de débito com esse nome cadastrado. Cadastre um na aba Cartões! 💳` };
+                    }
+                }
             }
 
             let match = rawText.match(/(?:gastei|paguei|comprei|gasto de)\s*(?:r\$)?\s*([\d.,]+)\s*(?:reais)?\s*(?:em|no|na|com|de|do|da)?\s*(.*)/i);
@@ -2037,7 +2782,6 @@
                     state.transactions.unshift(newTx);
                     saveData();
 
-                    /* NOVO: dispara alerta de limite também quando o lançamento vem do chat */
                     checkCategoryBudgetAlert(newTx.category, newTx.date);
 
                     return { text: `✅ Despesa registrada!<br><b>${escapeHTML(newTx.desc)}</b> - ${formatBRL(amount)}<br>Categoria: ${escapeHTML(categoryName)}` };
@@ -2074,7 +2818,7 @@
                 const income = monthTxs.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
                 const expense = monthTxs.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
                 const balance = income - expense;
-                return { text: `💰 Seu saldo em ${monthNames[currentDate.getMonth()]} é de <b>${formatBRL(balance)}</b><br>Receitas: ${formatBRL(income)} | Despesas: ${formatBRL(expense)}` };
+                return { text: `💰 Seu saldo em ${monthNames[currentDate.getMonth()]} é de <b>${formatBRL(balance)}</b><br>Receitas: ${formatBRL(income)} | Despesas: ${formatBRL(expense)}<br><i>Compras no crédito não entram aqui até a fatura ser paga.</i>` };
             }
 
             if (/quanto gastei|total de gastos|gastos do mes|minhas despesas/.test(text)) {
@@ -2125,7 +2869,7 @@
             }
 
             return {
-                text: `Desculpe, não entendi muito bem 🤔. Você pode tentar perguntar de outra forma, por exemplo:<br><br>💬 "Gastei 30 no mercado"<br>💬 "Qual meu saldo?"<br>💬 "Estourei algum limite?"<br>💬 "Como está minha meta?"<br><br>Se preferir, posso te direcionar ao nosso suporte:`,
+                text: `Desculpe, não entendi muito bem 🤔. Você pode tentar perguntar de outra forma, por exemplo:<br><br>💬 "Gastei 30 no mercado"<br>💬 "Gastei 200 no crédito do Nubank em 3x"<br>💬 "Qual a fatura do Nubank?"<br>💬 "Qual meu saldo?"<br>💬 "Estourei algum limite?"<br>💬 "Como está minha meta?"<br><br>Se preferir, posso te direcionar ao nosso suporte:`,
                 showSupport: true
             };
         }
