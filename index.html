@@ -25,14 +25,22 @@
             document.documentElement.classList.remove('dark');
         }
 
+        /* Config do Tailwind é definida UMA ÚNICA VEZ.
+           As cores "brand" apontam para variáveis CSS (--brand-*),
+           que são alteradas depois via JS para trocar o tema SEM
+           precisar reconfigurar o Tailwind (o que causava bugs visuais). */
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         brand: {
-                            50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1',
-                            600: '#4f46e5', 700: '#4338ca', 900: '#312e81',
+                            50: 'rgb(var(--brand-50) / <alpha-value>)',
+                            100: 'rgb(var(--brand-100) / <alpha-value>)',
+                            500: 'rgb(var(--brand-500) / <alpha-value>)',
+                            600: 'rgb(var(--brand-600) / <alpha-value>)',
+                            700: 'rgb(var(--brand-700) / <alpha-value>)',
+                            900: 'rgb(var(--brand-900) / <alpha-value>)',
                         }
                     }
                 }
@@ -41,6 +49,14 @@
     </script>
 
     <style>
+        :root {
+            --brand-50: 238 242 255;
+            --brand-100: 224 231 255;
+            --brand-500: 99 102 241;
+            --brand-600: 79 70 229;
+            --brand-700: 67 56 202;
+            --brand-900: 49 46 129;
+        }
         * {
             -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent;
@@ -836,17 +852,17 @@
         }
 
         /* ============================================================
-           TEMAS DE COR PREDEFINIDOS
+           TEMAS DE COR PREDEFINIDOS (via variáveis CSS - NÃO reconfigura o Tailwind)
         ============================================================ */
         const THEMES = {
-            indigo:  { 50:'#eef2ff',100:'#e0e7ff',500:'#6366f1',600:'#4f46e5',700:'#4338ca',900:'#312e81' },
-            blue:    { 50:'#eff6ff',100:'#dbeafe',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',900:'#1e3a8a' },
-            emerald: { 50:'#ecfdf5',100:'#d1fae5',500:'#10b981',600:'#059669',700:'#047857',900:'#064e3b' },
-            purple:  { 50:'#faf5ff',100:'#f3e8ff',500:'#a855f7',600:'#9333ea',700:'#7e22ce',900:'#581c87' },
-            rose:    { 50:'#fff1f2',100:'#ffe4e6',500:'#f43f5e',600:'#e11d48',700:'#be123c',900:'#881337' },
-            amber:   { 50:'#fffbeb',100:'#fef3c7',500:'#f59e0b',600:'#d97706',700:'#b45309',900:'#78350f' },
-            slate:   { 50:'#f8fafc',100:'#f1f5f9',500:'#64748b',600:'#475569',700:'#334155',900:'#0f172a' },
-            teal:    { 50:'#f0fdfa',100:'#ccfbf1',500:'#14b8a6',600:'#0d9488',700:'#0f766e',900:'#134e4a' }
+            indigo:  { 50:'238 242 255', 100:'224 231 255', 500:'99 102 241', 600:'79 70 229', 700:'67 56 202', 900:'49 46 129' },
+            blue:    { 50:'239 246 255', 100:'219 234 254', 500:'59 130 246', 600:'37 99 235', 700:'29 78 216', 900:'30 58 138' },
+            emerald: { 50:'236 253 245', 100:'209 250 229', 500:'16 185 129', 600:'5 150 105', 700:'4 120 87', 900:'6 78 59' },
+            purple:  { 50:'250 245 255', 100:'243 232 255', 500:'168 85 247', 600:'147 51 234', 700:'126 34 206', 900:'88 28 135' },
+            rose:    { 50:'255 241 242', 100:'255 228 230', 500:'244 63 94', 600:'225 29 72', 700:'190 18 60', 900:'136 19 55' },
+            amber:   { 50:'255 251 235', 100:'254 243 199', 500:'245 158 11', 600:'217 119 6', 700:'180 83 9', 900:'120 53 15' },
+            slate:   { 50:'248 250 252', 100:'241 245 249', 500:'100 116 139', 600:'71 85 105', 700:'51 65 85', 900:'15 23 42' },
+            teal:    { 50:'240 253 250', 100:'204 251 241', 500:'20 184 166', 600:'13 148 136', 700:'15 118 110', 900:'19 78 74' }
         };
 
         const THEME_LABELS = {
@@ -856,13 +872,16 @@
 
         function applyTheme(themeKey, persist = true) {
             const theme = THEMES[themeKey] || THEMES.indigo;
+            const root = document.documentElement;
 
-            tailwind.config = {
-                darkMode: 'class',
-                theme: { extend: { colors: { brand: theme } } }
-            };
+            root.style.setProperty('--brand-50', theme[50]);
+            root.style.setProperty('--brand-100', theme[100]);
+            root.style.setProperty('--brand-500', theme[500]);
+            root.style.setProperty('--brand-600', theme[600]);
+            root.style.setProperty('--brand-700', theme[700]);
+            root.style.setProperty('--brand-900', theme[900]);
 
-            document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', theme[600]));
+            document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', `rgb(${theme[600]})`));
             localStorage.setItem('finflow_color_theme', themeKey);
 
             if (persist && userProfile) {
@@ -885,7 +904,7 @@
                 return `
                     <button type="button" onclick="applyTheme('${key}')" title="${THEME_LABELS[key]}"
                         class="relative w-11 h-11 rounded-2xl shadow-sm flex items-center justify-center active:scale-90 transition-transform ${isActive ? 'ring-2 ring-offset-2 ring-gray-800 dark:ring-white dark:ring-offset-gray-800' : ''}"
-                        style="background:${c[600]}">
+                        style="background: rgb(${c[600]})">
                         ${isActive ? '<i class="fas fa-check text-white text-xs"></i>' : ''}
                     </button>
                 `;
