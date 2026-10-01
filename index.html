@@ -80,6 +80,36 @@
         .backdrop.active { opacity: 1; pointer-events: auto; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ===== Ajustes para telas grandes (desktop/web) =====
+           No mobile os modais continuam deslizando de baixo (comportamento original, intocado).
+           A partir de 1024px (lg), viram uma janela centralizada — mais adequado para mouse/teclado. */
+        @media (min-width: 1024px) {
+            .bottom-sheet {
+                position: fixed !important;
+                top: 50% !important;
+                left: 50% !important;
+                right: auto !important;
+                bottom: auto !important;
+                width: 92% !important;
+                max-width: 30rem !important;
+                max-height: 85vh !important;
+                border-radius: 1.5rem !important;
+                transform: translate(-50%, -48%) scale(0.97) !important;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s ease, transform 0.25s ease !important;
+            }
+            .bottom-sheet.active {
+                transform: translate(-50%, -50%) scale(1) !important;
+                opacity: 1;
+                pointer-events: auto;
+            }
+            #chatPanel {
+                max-width: 26rem !important;
+                height: 75vh !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
@@ -89,7 +119,7 @@
     <div id="appWallpaperOverlay" class="fixed inset-0 bg-gray-50 dark:bg-gray-900 pointer-events-none transition-colors duration-200" style="z-index:-1; opacity:1;"></div>
 
     <!-- Container de Toasts (alertas rápidos) -->
-    <div id="toastContainer" class="fixed top-0 left-0 right-0 z-[100] flex flex-col items-center gap-2 px-4 pt-safe mt-2 max-w-lg mx-auto pointer-events-none"></div>
+    <div id="toastContainer" class="fixed top-0 left-0 right-0 z-[100] flex flex-col items-center gap-2 px-4 pt-safe mt-2 max-w-lg lg:max-w-4xl lg:pl-60 mx-auto pointer-events-none"></div>
 
     <!-- TELA DE LOGIN -->
     <div id="loginScreen" class="fixed inset-0 bg-white dark:bg-gray-900 z-[60] flex flex-col justify-center items-center px-6">
@@ -170,9 +200,52 @@
         </div>
     </div>
 
+    <!-- SIDEBAR DE NAVEGAÇÃO (SOMENTE DESKTOP/WEB) -->
+    <aside id="desktopSidebar" class="hidden lg:flex lg:flex-col fixed top-0 left-0 h-full w-60 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-30">
+        <div class="p-5 flex items-center gap-3 border-b border-gray-100 dark:border-gray-700">
+            <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center text-base shadow-md shadow-brand-500/30 flex-shrink-0">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="min-w-0">
+                <h1 class="text-sm font-bold leading-tight truncate">AJ-MyFinance</h1>
+                <p class="text-[10px] text-gray-400 truncate">Controle Financeiro</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            <button onclick="switchTab('dashboard')" id="sidenav-dashboard" class="sidenav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-gray-700 transition-colors">
+                <i class="fas fa-chart-pie w-4 text-center"></i> Início
+            </button>
+            <button onclick="switchTab('transactions')" id="sidenav-transactions" class="sidenav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <i class="fas fa-list-ul w-4 text-center"></i> Extrato
+            </button>
+            <button onclick="switchTab('cards')" id="sidenav-cards" class="sidenav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <i class="fas fa-credit-card w-4 text-center"></i> Cartões
+            </button>
+            <button onclick="switchTab('fixed')" id="sidenav-fixed" class="sidenav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <i class="fas fa-calendar-check w-4 text-center"></i> Fixas
+            </button>
+            <button onclick="switchTab('budgets')" id="sidenav-budgets" class="sidenav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <i class="fas fa-sliders-h w-4 text-center"></i> Limites
+            </button>
+            <button onclick="switchTab('goals')" id="sidenav-goals" class="sidenav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <i class="fas fa-bullseye w-4 text-center"></i> Metas
+            </button>
+        </nav>
+
+        <div class="p-3 border-t border-gray-100 dark:border-gray-700 space-y-2">
+            <button onclick="openTxModal()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                <i class="fas fa-plus"></i> Nova Transação
+            </button>
+            <button onclick="toggleChat()" class="w-full py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                <i class="fas fa-comment-dots"></i> Assistente
+            </button>
+        </div>
+    </aside>
+
     <!-- Cabeçalho Fixo Mobile -->
     <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20 pt-safe">
-        <div class="px-4 py-3 flex justify-between items-center max-w-lg mx-auto">
+        <div class="px-4 py-3 flex justify-between items-center max-w-lg lg:max-w-4xl lg:pl-60 mx-auto">
             <div class="flex items-center space-x-3 cursor-pointer" onclick="openProfileModal()">
                 <div class="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-md font-bold text-sm overflow-hidden" id="userAvatar">
                     U
@@ -198,7 +271,7 @@
     </header>
 
     <!-- Conteúdo Principal -->
-    <main class="flex-1 px-4 pt-4 max-w-lg mx-auto w-full pb-safe">
+    <main class="flex-1 px-4 pt-4 max-w-lg lg:max-w-4xl lg:pl-60 mx-auto w-full pb-safe">
 
         <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between mb-4">
             <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center active:scale-95 transition-transform">
@@ -238,19 +311,21 @@
                 Ver Relatório e Comparativo Anual
             </button>
 
-            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Distribuição do Mês</h3>
-                <div class="relative h-48 flex justify-center items-center">
-                    <canvas id="categoryChartMobile"></canvas>
+            <div class="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Distribuição do Mês</h3>
+                    <div class="relative h-48 flex justify-center items-center">
+                        <canvas id="categoryChartMobile"></canvas>
+                    </div>
                 </div>
-            </div>
 
-            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Recentes do Mês</h3>
-                    <button onclick="switchTab('transactions')" class="text-xs text-brand-600 dark:text-brand-400 font-semibold">Ver tudo</button>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Recentes do Mês</h3>
+                        <button onclick="switchTab('transactions')" class="text-xs text-brand-600 dark:text-brand-400 font-semibold">Ver tudo</button>
+                    </div>
+                    <div id="dashRecentList" class="space-y-2"></div>
                 </div>
-                <div id="dashRecentList" class="space-y-2"></div>
             </div>
         </section>
 
@@ -270,7 +345,7 @@
                 </div>
             </div>
 
-            <div id="fullTxList" class="space-y-2"></div>
+            <div id="fullTxList" class="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3 lg:items-start"></div>
         </section>
 
         <!-- ABA: CARTÕES -->
@@ -289,7 +364,7 @@
             <p class="text-[11px] text-gray-500 dark:text-gray-400">
                 💡 Compras no crédito não afetam seu saldo imediatamente — somente quando você confirmar o pagamento da fatura. Compras no débito saem do saldo na hora.
             </p>
-            <div id="cardsList" class="space-y-3"></div>
+            <div id="cardsList" class="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3 lg:items-start"></div>
         </section>
 
         <!-- ABA: DESPESAS FIXAS -->
@@ -301,7 +376,7 @@
                 </button>
             </div>
             <p class="text-[11px] text-gray-500 dark:text-gray-400">Cadastre suas contas mensais. Clique em "Confirmar Pagamento" para debitar o valor no mês selecionado.</p>
-            <div id="fixedList" class="space-y-3"></div>
+            <div id="fixedList" class="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3 lg:items-start"></div>
         </section>
 
         <!-- ABA: LIMITES -->
@@ -312,7 +387,7 @@
                     <i class="fas fa-plus text-[10px] mr-1"></i> Nova Categoria
                 </button>
             </div>
-            <div id="budgetList" class="space-y-3"></div>
+            <div id="budgetList" class="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3 lg:items-start"></div>
         </section>
 
         <!-- ABA: METAS -->
@@ -323,23 +398,23 @@
                     <i class="fas fa-plus text-[10px] mr-1"></i> Nova Meta
                 </button>
             </div>
-            <div id="goalsList" class="space-y-3"></div>
+            <div id="goalsList" class="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3 lg:items-start"></div>
         </section>
 
     </main>
 
     <!-- FAB Nova Transação -->
-    <button onclick="openTxModal()" class="fixed right-5 bottom-20 z-30 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg flex items-center justify-center text-xl active:scale-90 transition-transform">
+    <button onclick="openTxModal()" class="fixed right-5 bottom-20 lg:bottom-6 z-30 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg flex items-center justify-center text-xl active:scale-90 transition-transform">
         <i class="fas fa-plus"></i>
     </button>
 
     <!-- FAB Chatbot -->
-    <button onclick="toggleChat()" class="fixed left-5 bottom-20 z-30 w-14 h-14 bg-gradient-to-br from-brand-500 to-brand-700 text-white rounded-full shadow-lg flex items-center justify-center text-xl active:scale-90 transition-transform">
+    <button onclick="toggleChat()" class="fixed left-5 bottom-20 z-30 w-14 h-14 bg-gradient-to-br from-brand-500 to-brand-700 text-white rounded-full shadow-lg flex items-center justify-center text-xl active:scale-90 transition-transform lg:hidden">
         <i class="fas fa-comment-dots"></i>
     </button>
 
     <!-- Bottom Bar -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-30 px-1 py-2">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-30 px-1 py-2 lg:hidden">
         <div class="max-w-lg mx-auto flex justify-between items-center text-center">
             <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item flex-1 flex flex-col items-center py-1 text-brand-600 dark:text-brand-400">
                 <i class="fas fa-chart-pie text-base"></i>
@@ -373,7 +448,7 @@
 
     <!-- MODAL: Perfil + Backup + Conta -->
     <div id="profileModal" class="bottom-sheet fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl p-5 z-50 max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
-        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 lg:hidden"></div>
         <h3 class="text-base font-bold mb-4">Perfil do Usuário</h3>
         <form onsubmit="updateUserProfile(event)" class="space-y-3">
             <div>
@@ -393,11 +468,14 @@
             <h4 class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Aparência</h4>
             <p class="text-[11px] text-gray-500 dark:text-gray-400">Escolha uma cor de tema para o aplicativo.</p>
 
-            <div id="themeSwatches" class="grid grid-cols-4 gap-3"></div>
+            <div id="themeSwatches" class="grid grid-cols-5 gap-2"></div>
 
             <div class="pt-3">
                 <p class="text-[11px] font-bold text-gray-600 dark:text-gray-300 mb-2">Papel de Parede</p>
-                <p class="text-[10px] text-gray-400 mb-2">A imagem aparecerá nos espaços entre os cards. Ela será comprimida automaticamente.</p>
+                <p class="text-[10px] text-gray-400 mb-2">Escolha um modelo pronto ou envie sua própria imagem. Ela aparecerá nos espaços entre os cards.</p>
+
+                <div id="wallpaperPresets" class="grid grid-cols-5 gap-2 mb-3"></div>
+
                 <div class="flex gap-2">
                     <button type="button" onclick="document.getElementById('wallpaperFile').click()" class="flex-1 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold rounded-xl text-xs shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                         <i class="fas fa-image"></i> Escolher Imagem
@@ -451,7 +529,7 @@
 
     <!-- MODAL: Nova Transação -->
     <div id="txModal" class="bottom-sheet fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl p-5 z-50 max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
-        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 lg:hidden"></div>
         <h3 id="txModalTitle" class="text-base font-bold mb-4">Nova Transação</h3>
         <form id="txForm" onsubmit="saveTransaction(event)" class="space-y-3">
             <input type="hidden" id="txId">
@@ -507,7 +585,7 @@
 
     <!-- MODAL: Despesa Fixa -->
     <div id="fixedModal" class="bottom-sheet fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl p-5 z-50 max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
-        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 lg:hidden"></div>
         <h3 id="fixedModalTitle" class="text-base font-bold mb-4">Nova Despesa Fixa</h3>
         <form id="fixedForm" onsubmit="saveFixed(event)" class="space-y-3">
             <input type="hidden" id="fixedId">
@@ -555,7 +633,7 @@
 
     <!-- MODAL: Relatório -->
     <div id="reportModal" class="bottom-sheet fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl p-5 z-50 max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
-        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 lg:hidden"></div>
         <h3 class="text-base font-bold mb-3">Relatório Comparativo Anual</h3>
 
         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-2xl mb-4">
@@ -570,7 +648,7 @@
 
     <!-- MODAL: Categoria -->
     <div id="categoryModal" class="bottom-sheet fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl p-5 z-50 max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
-        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 lg:hidden"></div>
         <h3 id="categoryModalTitle" class="text-base font-bold mb-4">Categoria e Limite</h3>
 
         <form id="categoryForm" onsubmit="saveCategory(event)" class="space-y-3">
@@ -595,7 +673,7 @@
 
     <!-- MODAL: Meta -->
     <div id="goalModal" class="bottom-sheet fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl p-5 z-50 max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
-        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 lg:hidden"></div>
         <h3 id="goalModalTitle" class="text-base font-bold mb-4">Nova Meta</h3>
         <form id="goalForm" onsubmit="saveGoal(event)" class="space-y-3">
             <input type="hidden" id="goalId">
@@ -623,7 +701,7 @@
 
     <!-- MODAL: Cartão -->
     <div id="cardModal" class="bottom-sheet fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl p-5 z-50 max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
-        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 lg:hidden"></div>
         <h3 id="cardModalTitle" class="text-base font-bold mb-4">Novo Cartão</h3>
         <form id="cardForm" onsubmit="saveCard(event)" class="space-y-3">
             <input type="hidden" id="cardId">
@@ -664,7 +742,7 @@
 
     <!-- MODAL: Compra no Cartão -->
     <div id="cardPurchaseModal" class="bottom-sheet fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl p-5 z-50 max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
-        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 lg:hidden"></div>
         <h3 id="cardPurchaseModalTitle" class="text-base font-bold mb-4">Nova Compra no Cartão</h3>
         <form id="cardPurchaseForm" onsubmit="saveCardPurchase(event)" class="space-y-3">
             <input type="hidden" id="cardPurchaseId">
@@ -870,6 +948,10 @@
             rose: 'Rosa', amber: 'Âmbar', slate: 'Grafite', teal: 'Turquesa'
         };
 
+        /* Paleta curada exibida na interface (mantemos o objeto THEMES completo
+           para não quebrar temas antigos já salvos em algum teste anterior) */
+        const DISPLAYED_THEME_KEYS = ['indigo', 'blue', 'emerald', 'rose', 'amber'];
+
         function applyTheme(themeKey, persist = true) {
             const theme = THEMES[themeKey] || THEMES.indigo;
             const root = document.documentElement;
@@ -898,14 +980,14 @@
 
             const activeKey = (userProfile && userProfile.colorTheme) || localStorage.getItem('finflow_color_theme') || 'indigo';
 
-            container.innerHTML = Object.keys(THEMES).map(key => {
+            container.innerHTML = DISPLAYED_THEME_KEYS.map(key => {
                 const c = THEMES[key];
                 const isActive = key === activeKey;
                 return `
                     <button type="button" onclick="applyTheme('${key}')" title="${THEME_LABELS[key]}"
-                        class="relative w-11 h-11 rounded-2xl shadow-sm flex items-center justify-center active:scale-90 transition-transform ${isActive ? 'ring-2 ring-offset-2 ring-gray-800 dark:ring-white dark:ring-offset-gray-800' : ''}"
+                        class="relative w-9 h-9 rounded-xl shadow-sm flex items-center justify-center active:scale-90 transition-transform ${isActive ? 'ring-2 ring-offset-2 ring-gray-800 dark:ring-white dark:ring-offset-gray-800' : ''}"
                         style="background: rgb(${c[600]})">
-                        ${isActive ? '<i class="fas fa-check text-white text-xs"></i>' : ''}
+                        ${isActive ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}
                     </button>
                 `;
             }).join('');
@@ -919,15 +1001,63 @@
         /* ============================================================
            PAPEL DE PAREDE PERSONALIZADO
         ============================================================ */
-        function applyWallpaper(dataUrl) {
+        /* 5 papéis de parede prontos (gradientes leves, sem depender de imagens externas) */
+        const PRESET_WALLPAPERS = [
+            { id: 'aurora',   label: 'Aurora',      css: 'radial-gradient(at top left, rgba(99,102,241,0.55), transparent 60%), radial-gradient(at bottom right, rgba(236,72,153,0.5), transparent 60%), linear-gradient(135deg, #1e1b4b, #312e81)' },
+            { id: 'sunset',   label: 'Pôr do Sol',  css: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #7c3aed 100%)' },
+            { id: 'ocean',    label: 'Oceano',      css: 'linear-gradient(160deg, #0ea5e9 0%, #0891b2 50%, #0f172a 100%)' },
+            { id: 'forest',   label: 'Floresta',    css: 'linear-gradient(135deg, #22c55e 0%, #065f46 60%, #022c22 100%)' },
+            { id: 'midnight', label: 'Meia-Noite',  css: 'radial-gradient(at top right, rgba(99,102,241,0.35), transparent 50%), linear-gradient(180deg, #0f172a 0%, #020617 100%)' }
+        ];
+
+        function applyWallpaper(value) {
             const wp = document.getElementById('appWallpaper');
             if (!wp) return;
 
-            if (dataUrl) {
-                wp.style.backgroundImage = `url("${dataUrl}")`;
-            } else {
+            if (!value) {
                 wp.style.backgroundImage = 'none';
+                return;
             }
+
+            if (value.startsWith('preset:')) {
+                const preset = PRESET_WALLPAPERS.find(p => p.id === value.replace('preset:', ''));
+                wp.style.backgroundImage = preset ? preset.css : 'none';
+            } else {
+                wp.style.backgroundImage = `url("${value}")`;
+            }
+        }
+
+        function renderWallpaperPresets() {
+            const container = document.getElementById('wallpaperPresets');
+            if (!container) return;
+
+            const current = (userProfile && userProfile.wallpaper) || localStorage.getItem('finflow_wallpaper') || '';
+
+            container.innerHTML = PRESET_WALLPAPERS.map(w => {
+                const value = 'preset:' + w.id;
+                const isActive = current === value;
+                return `
+                    <button type="button" onclick="selectPresetWallpaper('${w.id}')" title="${w.label}"
+                        class="relative w-9 h-9 rounded-xl shadow-sm overflow-hidden active:scale-90 transition-transform ${isActive ? 'ring-2 ring-offset-2 ring-brand-600 dark:ring-offset-gray-800' : ''}"
+                        style="background: ${w.css}">
+                        ${isActive ? '<span class="absolute inset-0 flex items-center justify-center bg-black/25"><i class="fas fa-check text-white text-[10px]"></i></span>' : ''}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectPresetWallpaper(key) {
+            const value = 'preset:' + key;
+            applyWallpaper(value);
+            localStorage.setItem('finflow_wallpaper', value);
+
+            if (userProfile) {
+                userProfile.wallpaper = value;
+                saveProfileToFirestore();
+            }
+
+            renderWallpaperPresets();
+            showToast('Papel de parede atualizado!', 'success');
         }
 
         function updateWallpaperOverlay(value, persist = true) {
@@ -994,6 +1124,7 @@
                         saveProfileToFirestore();
                     }
 
+                    renderWallpaperPresets();
                     showToast(`Papel de parede atualizado! (${approxKB}KB)`, 'success');
                 };
                 img.src = e.target.result;
@@ -1009,6 +1140,7 @@
                 userProfile.wallpaper = null;
                 saveProfileToFirestore();
             }
+            renderWallpaperPresets();
             showToast('Papel de parede removido.', 'info');
         }
 
@@ -1481,6 +1613,7 @@
                 }
             }
             renderThemeSwatches();
+            renderWallpaperPresets();
             openModal('profileModal');
         }
 
@@ -1622,6 +1755,12 @@
 
             document.querySelectorAll('.nav-item').forEach(el => el.className = 'nav-item flex-1 flex flex-col items-center py-1 text-gray-400');
             document.getElementById(`nav-${tabId}`).className = 'nav-item flex-1 flex flex-col items-center py-1 text-brand-600 dark:text-brand-400';
+
+            document.querySelectorAll('.sidenav-item').forEach(el => el.className = 'sidenav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors');
+            const activeSidenav = document.getElementById(`sidenav-${tabId}`);
+            if (activeSidenav) {
+                activeSidenav.className = 'sidenav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-gray-700 transition-colors';
+            }
         }
 
         function openModal(id) {
