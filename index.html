@@ -464,30 +464,36 @@
 
         <hr class="my-5 border-gray-200 dark:border-gray-700">
 
+        <!-- ===== APARÊNCIA (COMPACTA) ===== -->
         <div class="space-y-3">
             <h4 class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Aparência</h4>
-            <p class="text-[11px] text-gray-500 dark:text-gray-400">Escolha uma cor de tema para o aplicativo.</p>
 
-            <div id="themeSwatches" class="grid grid-cols-5 gap-2"></div>
-
-            <div class="pt-3">
-                <p class="text-[11px] font-bold text-gray-600 dark:text-gray-300 mb-2">Papel de Parede</p>
-                <p class="text-[10px] text-gray-400 mb-2">Escolha um modelo pronto ou envie sua própria imagem. Ela aparecerá nos espaços entre os cards.</p>
-
-                <div id="wallpaperPresets" class="grid grid-cols-5 gap-2 mb-3"></div>
-
-                <div class="flex gap-2">
-                    <button type="button" onclick="document.getElementById('wallpaperFile').click()" class="flex-1 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold rounded-xl text-xs shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                        <i class="fas fa-image"></i> Escolher Imagem
-                    </button>
-                    <button type="button" onclick="removeWallpaper()" class="px-4 py-2.5 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 font-bold rounded-xl text-xs shadow-sm active:scale-95 transition-transform">
-                        <i class="fas fa-trash"></i>
-                    </button>
+            <div class="bg-gray-50 dark:bg-gray-700/40 rounded-2xl p-3 space-y-3">
+                <!-- Cor do tema -->
+                <div>
+                    <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Cor do Tema</p>
+                    <div id="themeSwatches" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5"></div>
                 </div>
-                <input type="file" id="wallpaperFile" accept="image/*" class="hidden" onchange="handleWallpaperUpload(event)">
 
-                <div class="mt-3">
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Intensidade do fundo</label>
+                <div class="h-px bg-gray-200 dark:bg-gray-600"></div>
+
+                <!-- Papel de parede -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Papel de Parede</p>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="document.getElementById('wallpaperFile').click()" title="Enviar sua imagem" class="w-6 h-6 rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center active:scale-90 transition-transform">
+                                <i class="fas fa-plus text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="wallpaperPresets" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5"></div>
+                    <input type="file" id="wallpaperFile" accept="image/*" class="hidden" onchange="handleWallpaperUpload(event)">
+                </div>
+
+                <!-- Intensidade -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Intensidade do fundo</label>
                     <input type="range" id="wallpaperOpacity" min="5" max="100" value="15" oninput="updateWallpaperOverlay(this.value)" class="w-full mt-1 accent-brand-600">
                 </div>
             </div>
@@ -974,6 +980,7 @@
             renderThemeSwatches();
         }
 
+        /* Fileira compacta de bolinhas pequenas, lado a lado, sem espaços grandes */
         function renderThemeSwatches() {
             const container = document.getElementById('themeSwatches');
             if (!container) return;
@@ -985,9 +992,9 @@
                 const isActive = key === activeKey;
                 return `
                     <button type="button" onclick="applyTheme('${key}')" title="${THEME_LABELS[key]}"
-                        class="relative w-9 h-9 rounded-xl shadow-sm flex items-center justify-center active:scale-90 transition-transform ${isActive ? 'ring-2 ring-offset-2 ring-gray-800 dark:ring-white dark:ring-offset-gray-800' : ''}"
+                        class="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center active:scale-90 transition-transform ${isActive ? 'ring-2 ring-offset-2 ring-gray-800 dark:ring-white dark:ring-offset-gray-800' : ''}"
                         style="background: rgb(${c[600]})">
-                        ${isActive ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}
+                        ${isActive ? '<i class="fas fa-check text-white text-[9px]"></i>' : ''}
                     </button>
                 `;
             }).join('');
@@ -1001,58 +1008,72 @@
         /* ============================================================
            PAPEL DE PAREDE PERSONALIZADO
         ============================================================ */
-        /* 5 papéis de parede prontos (gradientes leves, sem depender de imagens externas) */
+        /* 5 papéis de parede prontos — IMAGENS reais (fotos), não apenas cores/gradientes */
         const PRESET_WALLPAPERS = [
-            { id: 'aurora',   label: 'Aurora',      css: 'radial-gradient(at top left, rgba(99,102,241,0.55), transparent 60%), radial-gradient(at bottom right, rgba(236,72,153,0.5), transparent 60%), linear-gradient(135deg, #1e1b4b, #312e81)' },
-            { id: 'sunset',   label: 'Pôr do Sol',  css: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #7c3aed 100%)' },
-            { id: 'ocean',    label: 'Oceano',      css: 'linear-gradient(160deg, #0ea5e9 0%, #0891b2 50%, #0f172a 100%)' },
-            { id: 'forest',   label: 'Floresta',    css: 'linear-gradient(135deg, #22c55e 0%, #065f46 60%, #022c22 100%)' },
-            { id: 'midnight', label: 'Meia-Noite',  css: 'radial-gradient(at top right, rgba(99,102,241,0.35), transparent 50%), linear-gradient(180deg, #0f172a 0%, #020617 100%)' }
+            { label: 'Montanha',  url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=60', thumb: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=150&q=50' },
+            { label: 'Serra',     url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1000&q=60', thumb: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=150&q=50' },
+            { label: 'Floresta',  url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1000&q=60', thumb: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=150&q=50' },
+            { label: 'Cidade',    url: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=1000&q=60', thumb: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=150&q=50' },
+            { label: 'Oceano',    url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=60', thumb: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=150&q=50' }
         ];
 
         function applyWallpaper(value) {
             const wp = document.getElementById('appWallpaper');
             if (!wp) return;
-
-            if (!value) {
-                wp.style.backgroundImage = 'none';
-                return;
-            }
-
-            if (value.startsWith('preset:')) {
-                const preset = PRESET_WALLPAPERS.find(p => p.id === value.replace('preset:', ''));
-                wp.style.backgroundImage = preset ? preset.css : 'none';
-            } else {
-                wp.style.backgroundImage = `url("${value}")`;
-            }
+            wp.style.backgroundImage = value ? `url("${value}")` : 'none';
         }
 
+        /* Fileira compacta de miniaturas (fotos reais) + opção "sem papel de parede" */
         function renderWallpaperPresets() {
             const container = document.getElementById('wallpaperPresets');
             if (!container) return;
 
             const current = (userProfile && userProfile.wallpaper) || localStorage.getItem('finflow_wallpaper') || '';
+            const isCustom = current && !PRESET_WALLPAPERS.some(w => w.url === current);
 
-            container.innerHTML = PRESET_WALLPAPERS.map(w => {
-                const value = 'preset:' + w.id;
-                const isActive = current === value;
+            let html = '';
+
+            if (isCustom) {
+                html += `
+                    <button type="button" title="Sua imagem"
+                        class="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 ring-2 ring-offset-2 ring-brand-600 dark:ring-offset-gray-800">
+                        <img src="${current}" class="w-full h-full object-cover" alt="Personalizado">
+                        <span class="absolute inset-0 flex items-center justify-center bg-black/30"><i class="fas fa-check text-white text-[10px]"></i></span>
+                    </button>
+                `;
+            }
+
+            html += PRESET_WALLPAPERS.map((w, idx) => {
+                const isActive = current === w.url;
                 return `
-                    <button type="button" onclick="selectPresetWallpaper('${w.id}')" title="${w.label}"
-                        class="relative w-9 h-9 rounded-xl shadow-sm overflow-hidden active:scale-90 transition-transform ${isActive ? 'ring-2 ring-offset-2 ring-brand-600 dark:ring-offset-gray-800' : ''}"
-                        style="background: ${w.css}">
-                        ${isActive ? '<span class="absolute inset-0 flex items-center justify-center bg-black/25"><i class="fas fa-check text-white text-[10px]"></i></span>' : ''}
+                    <button type="button" onclick="selectPresetWallpaper(${idx})" title="${w.label}"
+                        class="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 active:scale-90 transition-transform ${isActive ? 'ring-2 ring-offset-2 ring-brand-600 dark:ring-offset-gray-800' : ''}">
+                        <img src="${w.thumb}" class="w-full h-full object-cover" alt="${w.label}" loading="lazy">
+                        ${isActive ? '<span class="absolute inset-0 flex items-center justify-center bg-black/30"><i class="fas fa-check text-white text-[10px]"></i></span>' : ''}
                     </button>
                 `;
             }).join('');
+
+            const isNone = !current;
+            html += `
+                <button type="button" onclick="removeWallpaper()" title="Sem papel de parede"
+                    class="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 active:scale-90 transition-transform ${isNone ? 'ring-2 ring-offset-2 ring-brand-600 dark:ring-offset-gray-800' : ''}">
+                    <i class="fas fa-ban text-xs"></i>
+                </button>
+            `;
+
+            container.innerHTML = html;
         }
 
-        function selectPresetWallpaper(key) {
-            const value = 'preset:' + key;
-            applyWallpaper(value);
-            localStorage.setItem('finflow_wallpaper', value);
+        function selectPresetWallpaper(idx) {
+            const preset = PRESET_WALLPAPERS[idx];
+            if (!preset) return;
+
+            applyWallpaper(preset.url);
+            localStorage.setItem('finflow_wallpaper', preset.url);
 
             if (userProfile) {
-                userProfile.wallpaper = value;
+                userProfile.wallpaper = preset.url;
                 saveProfileToFirestore();
             }
 
